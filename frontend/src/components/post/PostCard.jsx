@@ -154,7 +154,7 @@ export default function PostCard({ post, onDelete }) {
             <div className="rounded-xl overflow-hidden mb-4 aspect-video"
                  style={{background:'#ebeef0'}}>
               <img
-                src={post.media[0].url.startsWith('/uploads') ? `${import.meta.env.VITE_BACKEND_URL || ''}${post.media[0].url}` : post.media[0].url}
+                src={post.media[0].url.startsWith('/uploads') ? `${import.meta.env.VITE_BACKEND_URL || 'https://snapzy-api.onrender.com'}${post.media[0].url}` : post.media[0].url}
                 alt="Post media"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 loading="lazy"
