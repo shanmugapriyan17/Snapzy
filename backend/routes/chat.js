@@ -11,7 +11,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const response = await mlService.szyChat(message, history || [], isSidebar);
     res.json(response);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json({ reply: `[DEBUG_ERROR_TRACE]: ${err.message}` });
   }
 });
 

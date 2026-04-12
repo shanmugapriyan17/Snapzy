@@ -56,8 +56,9 @@ ${formattedHistory}
 
       return { reply: data.candidates[0].content.parts[0].text.trim() };
     } catch (err) {
-      console.error('Gemini error (szyChat) using ' + (isSidebar?'sidebar':'middle') + ' key:', err.response?.data || err.message);
-      throw err;
+      const details = err.response?.data?.error?.message || err.message;
+      console.error('Gemini error (szyChat):', details);
+      throw new Error(details);
     }
   }
 };
