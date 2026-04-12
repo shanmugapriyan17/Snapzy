@@ -12,8 +12,12 @@ const blockchain   = require('../services/blockchainService');
 const socketSvc    = require('../services/socketService');
 
 // ─── Multer config for image uploads ─────────────────────────────────────────
+const fs = require('fs');
+const uploadDir = path.resolve(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.resolve(__dirname, '../uploads')),
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename:    (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`)
 });
 const upload = multer({
