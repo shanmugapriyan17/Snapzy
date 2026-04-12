@@ -1,7 +1,8 @@
 const axios = require('axios');
 
-const GEMINI_API_KEY_MIDDLE = process.env.GEMINI_API_KEY_MIDDLE || 'AIzaSyCSefDWKmdh6PMZBwfiO8F9FqrUCM5D5FY';
-const GEMINI_API_KEY_SIDEBAR = process.env.GEMINI_API_KEY_SIDEBAR || 'AIzaSyDu1bLaWs5JVmATYFLhNdMIGZn33BzQpug';
+const GEMINI_API_KEY_MIDDLE = process.env.GEMINI_API_KEY_MIDDLE;
+const GEMINI_API_KEY_SIDEBAR = process.env.GEMINI_API_KEY_SIDEBAR;
+
 const getGeminiUrl = (isSidebar) => `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${isSidebar ? GEMINI_API_KEY_SIDEBAR : GEMINI_API_KEY_MIDDLE}`;
 
 const mlService = {
