@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const GEMINI_API_KEY_MIDDLE = process.env.GEMINI_API_KEY_MIDDLE || 'AIzaSyCSefDWKmdh6PMZBwfiO8F9FqrUCM5D5FY';
 const GEMINI_API_KEY_SIDEBAR = process.env.GEMINI_API_KEY_SIDEBAR || 'AIzaSyDu1bLaWs5JVmATYFLhNdMIGZn33BzQpug';
-const getGeminiUrl = (isSidebar) => `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${isSidebar ? GEMINI_API_KEY_SIDEBAR : GEMINI_API_KEY_MIDDLE}`;
+const getGeminiUrl = (isSidebar) => `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${isSidebar ? GEMINI_API_KEY_SIDEBAR : GEMINI_API_KEY_MIDDLE}`;
 
 const mlService = {
   async detectFake(profileData) {
