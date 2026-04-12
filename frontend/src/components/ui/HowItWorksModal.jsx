@@ -37,7 +37,7 @@ export default function HowItWorksModal({ open, onClose }) {
       padding: '1.5rem',
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: '100%', maxWidth: 600,
+        width: '100%', maxWidth: 600, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
         background: 'var(--bg-2)', borderRadius: 20,
         boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
         overflow: 'hidden', border: '1px solid var(--border)',
@@ -59,7 +59,7 @@ export default function HowItWorksModal({ open, onClose }) {
         </div>
 
         {/* Steps */}
-        <div style={{ padding: '1.5rem 2rem 2rem', display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div style={{ padding: '1.5rem 2rem 2rem', display: 'flex', flexDirection: 'column', gap: 0, overflowY: 'auto' }}>
           {STEPS.map((step, i) => {
             const Icon = step.icon
             const visible = i <= visibleStep
