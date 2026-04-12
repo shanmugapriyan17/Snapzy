@@ -1,0 +1,52 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node.js
+node_modules
+dist
+dist-ssr
+*.local
+
+# Python / ML Service
+ml-service/.venv
+ml-service/__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.env
+
+# Hardhat / Blockchain
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain/
+blockchain/typechain-types/
+blockchain/coverage/
+blockchain/coverage.json
+
+# Backend
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/nexus_audit.sqlite
+backend/nexus_audit.sqlite-journal
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Temporary files
+scratch/
+test-script.js

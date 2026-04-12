@@ -1,0 +1,14 @@
+{
+  "name": "snapzy-blockchain",
+  "version": "1.0.0",
+  "description": "Snapzy smart contracts",
+  "scripts": {
+    "node": "hardhat node",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "compile": "hardhat compile"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  }
+}
