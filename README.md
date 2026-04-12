@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150/b48aff/ffffff?text=S" alt="Snapzy Logo" width="80" height="80">
+  <img src="https://placehold.co/150x150/05020f/b48aff?text=S" alt="Snapzy Logo" width="80" height="80">
   <h1>Snapzy (formerly NexusSocial)</h1>
   <p><strong>Next-Gen Decentralized, AI-Moderated Social Platform</strong></p>
   <i>Fusing cutting-edge Web2 Glassmorphism aesthetics with immutable Web3 transparency.</i>
