@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api', timeout: 15000 })
+const baseURL = import.meta.env.VITE_BACKEND_URL ? `${import.meta.env.VITE_BACKEND_URL}/api` : '/api'
+const api = axios.create({ baseURL, timeout: 15000 })
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('nexus_token')
