@@ -31,24 +31,67 @@ export default function PostCard({ post, onDelete }) {
     }
   }
 
-  const deletePost = async () => {
-    if (!window.confirm('Delete this post? The deletion will be permanently recorded on the blockchain.')) return
-    try {
-      await api.delete(`/posts/${post._id}`)
-      toast.success('Post deleted (recorded on blockchain)')
-      onDelete?.(post._id)
-    } catch { toast.error('Failed to delete') }
+  const deletePost = () => {
+    toast((t) => (
+      <div className="animate-fade-in flex flex-col gap-2">
+        <strong className="text-sm text-gray-900">Delete this post?</strong>
+        <p className="text-xs text-gray-600 leading-relaxed mb-1">
+          This deletion will be permanently recorded on the blockchain ledger.
+        </p>
+        <div className="flex gap-2 justify-end mt-1">
+          <button 
+            onClick={() => toast.dismiss(t.id)} 
+            className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await api.delete(`/posts/${post._id}`);
+                toast.success('Post deleted (recorded on blockchain)');
+                onDelete?.(post._id);
+              } catch { toast.error('Failed to delete'); }
+            }} 
+            className="px-3 py-1.5 text-xs font-bold text-white rounded hover:opacity-90 transition-opacity"
+            style={{background: 'var(--danger, #ef4444)'}}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    ), { duration: 60000 });
   }
 
-  const reportPost = async () => {
-    setReporting(true)
-    const reason = window.prompt('Why are you reporting this post?')
-    if (!reason) { setReporting(false); return }
-    try {
-      await api.post(`/posts/${post._id}/report`, { reason })
-      toast.success('Post reported to admins')
-    } catch { toast.error('Report failed') }
-    setReporting(false)
+  const reportPost = () => {
+    toast((t) => (
+      <div className="animate-fade-in flex flex-col gap-2 min-w-[240px]">
+        <strong className="text-sm text-gray-900">Report Post</strong>
+        <p className="text-xs text-gray-600">Why are you reporting this content?</p>
+        <input 
+          id={`report-input-${t.id}`}
+          className="text-xs border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500 text-black mb-1 w-full" 
+          placeholder="E.g., violence, spam..." 
+          autoFocus 
+          onKeyDown={(e) => { e.stopPropagation() }}
+        />
+        <div className="flex gap-2 justify-end mt-1">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors">Cancel</button>
+          <button onClick={async () => {
+            const val = document.getElementById(`report-input-${t.id}`)?.value;
+            if (!val?.trim()) return toast.error('Please enter a reason');
+            toast.dismiss(t.id);
+            setReporting(true);
+            try {
+              await api.post(`/posts/${post._id}/report`, { reason: val });
+              toast.success('Post reported to admins');
+            } catch { toast.error('Report failed'); }
+            setReporting(false);
+          }} className="px-3 py-1.5 text-xs font-bold text-white rounded hover:opacity-90 transition-opacity" style={{background: 'var(--primary, #3b82f6)'}}>Submit</button>
+        </div>
+      </div>
+    ), { duration: 100000 });
   }
 
   const sharePost = () => {
@@ -154,7 +197,7 @@ export default function PostCard({ post, onDelete }) {
             <div className="rounded-xl overflow-hidden mb-4 aspect-video"
                  style={{background:'#ebeef0'}}>
               <img
-                src={post.media[0].url.startsWith('/uploads') ? `${import.meta.env.VITE_BACKEND_URL || 'https://snapzy-api.onrender.com'}${post.media[0].url}` : post.media[0].url}
+                src={post.media[0].url}
                 alt="Post media"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 loading="lazy"

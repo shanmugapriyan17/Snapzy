@@ -11,23 +11,28 @@ const auditDB      = require('../services/auditDB');
 const blockchain   = require('../services/blockchainService');
 const socketSvc    = require('../services/socketService');
 
-// ─── Multer config for image uploads ─────────────────────────────────────────
-const fs = require('fs');
-const uploadDir = path.resolve(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// ─── Cloudinary config for PERMANENT image uploads ───────────────────────────
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename:    (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:         'snapzy_posts',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    transformation: [{ width: 1200, quality: 'auto', fetch_format: 'auto' }],
+  },
+});
+
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype.split('/')[1]);
-    cb(ok ? null : new Error('Only images allowed'), ok);
-  }
 });
 
 // ─── Violence / Banned word list (comprehensive) ─────────────────────────────
@@ -129,9 +134,9 @@ router.post('/', authMiddleware, upload.single('image'), contentFilter, async (r
       flagReason: (req.body._flagReason ? req.body._flagReason + ' | ' : '') + detection.words.join(', '),
     };
 
-    // Attach uploaded image
+    // Attach uploaded image — Cloudinary gives a permanent HTTPS URL
     if (req.file) {
-      postData.media = [{ url: `/uploads/${req.file.filename}`, type: 'image' }];
+      postData.media = [{ url: req.file.path, type: 'image' }];
     }
 
     const post = await Post.create(postData);
