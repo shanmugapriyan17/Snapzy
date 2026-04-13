@@ -1,46 +1,37 @@
-const router       = require('express').Router();
-const crypto       = require('crypto');
-const multer       = require('multer');
-const path         = require('path');
-const Post         = require('../models/Post');
-const User         = require('../models/User');
-const ActivityLog  = require('../models/ActivityLog');
+const router = require('express').Router();
+const crypto = require('crypto');
+const multer = require('multer');
+const path = require('path');
+const Post = require('../models/Post');
+const User = require('../models/User');
+const ActivityLog = require('../models/ActivityLog');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const contentFilter = require('../middleware/contentFilter');
-const auditDB      = require('../services/auditDB');
-const blockchain   = require('../services/blockchainService');
-const socketSvc    = require('../services/socketService');
+const auditDB = require('../services/auditDB');
+const blockchain = require('../services/blockchainService');
+const socketSvc = require('../services/socketService');
 
-// ─── Cloudinary config for PERMANENT image uploads ───────────────────────────
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+// ─── Multer config for image uploads ─────────────────────────────────────────
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.resolve(__dirname, '../uploads')),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`)
 });
-
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder:         'snapzy_posts',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    transformation: [{ width: 1200, quality: 'auto', fetch_format: 'auto' }],
-  },
-});
-
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|webp/;
+    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype.split('/')[1]);
+    cb(ok ? null : new Error('Only images allowed'), ok);
+  }
 });
 
 // ─── Violence / Banned word list (comprehensive) ─────────────────────────────
 const VIOLENCE_WORDS = {
   critical: ['kill', 'murder', 'terrorist', 'bomb', 'suicide', 'shoot', 'stab', 'rape', 'assault', 'execute', 'massacre', 'slaughter', 'genocide', 'i will kill', 'gonna kill', 'want to kill', 'i will hurt', 'death threat', 'blow up', 'bomb threat', 'school shooting', 'mass shooting', 'i want to die', 'kms', 'kys', 'kill yourself'],
-  high:     ['hate', 'racist', 'racism', 'sexist', 'nazi', 'fascist', 'homophobic', 'slur', 'abuse', 'harass', 'harassment', 'bully', 'bullying', 'threat', 'violence', 'extremist', 'supremacist', 'lynch', 'beat you', 'hurt you', 'terrorist act', 'jihad', 'white supremacy', 'hate crime'],
-  medium:   ['stupid', 'idiot', 'moron', 'loser', 'ugly', 'dumb', 'trash', 'worthless', 'pathetic', 'disgusting', 'scam', 'fraud', 'spam', 'porn', 'nsfw', 'fuck', 'fucking', 'fucker', 'motherfucker', 'bitch', 'bastard', 'asshole', 'arsehole', 'shit', 'bullshit', 'crap', 'cunt', 'dick', 'cock', 'pussy', 'whore', 'slut', 'piss', 'pissed', 'faggot', 'fag', 'retard', 'retarded', 'nigger', 'nigga', 'chink', 'spic', 'kike', 'cracker', 'honky'],
-  low:      ['hell', 'damn', 'wtf', 'suck', 'lame', 'jerk', 'douchebag', 'wanker', 'twat', 'arse', 'ass', 'crap', 'bloody', 'git', 'numpty', 'shut up', 'loser', 'creep', 'freak', 'weirdo'],
+  high: ['hate', 'racist', 'racism', 'sexist', 'nazi', 'fascist', 'homophobic', 'slur', 'abuse', 'harass', 'harassment', 'bully', 'bullying', 'threat', 'violence', 'extremist', 'supremacist', 'lynch', 'beat you', 'hurt you', 'terrorist act', 'jihad', 'white supremacy', 'hate crime'],
+  medium: ['stupid', 'idiot', 'moron', 'loser', 'ugly', 'dumb', 'trash', 'worthless', 'pathetic', 'disgusting', 'scam', 'fraud', 'spam', 'porn', 'nsfw', 'fuck', 'fucking', 'fucker', 'motherfucker', 'bitch', 'bastard', 'asshole', 'arsehole', 'shit', 'bullshit', 'crap', 'cunt', 'dick', 'cock', 'pussy', 'whore', 'slut', 'piss', 'pissed', 'faggot', 'fag', 'retard', 'retarded', 'nigger', 'nigga', 'chink', 'spic', 'kike', 'cracker', 'honky'],
+  low: ['hell', 'damn', 'wtf', 'suck', 'lame', 'jerk', 'douchebag', 'wanker', 'twat', 'arse', 'ass', 'crap', 'bloody', 'git', 'numpty', 'shut up', 'loser', 'creep', 'freak', 'weirdo'],
 };
 
 function detectViolence(text) {
@@ -52,7 +43,7 @@ function detectViolence(text) {
     for (const word of words) {
       if (lower.includes(word)) {
         found.push(word);
-        if (!maxSeverity || ['critical','high','medium','low'].indexOf(severity) < ['critical','high','medium','low'].indexOf(maxSeverity)) {
+        if (!maxSeverity || ['critical', 'high', 'medium', 'low'].indexOf(severity) < ['critical', 'high', 'medium', 'low'].indexOf(maxSeverity)) {
           maxSeverity = severity;
         }
       }
@@ -64,17 +55,18 @@ function detectViolence(text) {
 // GET /api/posts/feed
 router.get('/feed', authMiddleware, async (req, res) => {
   try {
-    const page    = parseInt(req.query.page) || 1;
-    const limit   = 20;
-    const skip    = (page - 1) * limit;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
     const following = (req.user.following || []).concat([req.user._id]);
     const posts = await Post.find({ author: { $in: following }, isHidden: false, isDeleted: { $ne: true } })
       .sort({ createdAt: -1 })
       .skip(skip).limit(limit)
       .populate('author', 'username fullName avatar accountHash isFlagged blockchainStatus')
       .populate('likes', '_id')
-      .populate('comments.author', 'username avatar');
-    res.json(posts);
+      .populate('comments.author', 'username avatar')
+    const filtered = posts.map(p => ({ ...p.toJSON(), comments: p.comments.filter(c => !c.isDeleted) }))
+    res.json(filtered);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -90,7 +82,8 @@ router.get('/explore', authMiddleware, async (req, res) => {
       .populate('author', 'username fullName avatar accountHash isFlagged blockchainStatus')
       .populate('likes', '_id')
       .populate('comments.author', 'username avatar');
-    res.json(posts);
+    const filtered = posts.map(p => ({ ...p.toJSON(), comments: p.comments.filter(c => !c.isDeleted) }));
+    res.json(filtered);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -124,7 +117,7 @@ router.post('/', authMiddleware, upload.single('image'), contentFilter, async (r
         target: req.user._id,
         details: `⚠️ @${req.user.username} posted violence: [${detection.words.join(', ')}] — "${content.slice(0, 100)}"`,
         severity: detection.severity === 'critical' ? 'critical' : 'warning',
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     const postData = {
@@ -134,9 +127,9 @@ router.post('/', authMiddleware, upload.single('image'), contentFilter, async (r
       flagReason: (req.body._flagReason ? req.body._flagReason + ' | ' : '') + detection.words.join(', '),
     };
 
-    // Attach uploaded image — Cloudinary gives a permanent HTTPS URL
+    // Attach uploaded image
     if (req.file) {
-      postData.media = [{ url: req.file.path, type: 'image' }];
+      postData.media = [{ url: `/uploads/${req.file.filename}`, type: 'image' }];
     }
 
     const post = await Post.create(postData);
@@ -200,28 +193,28 @@ router.post('/:id/comment', authMiddleware, async (req, res) => {
       // Always log to admin dashboard
       const severityLabel = detection.severity === 'critical' ? 'critical' : 'warning';
       await ActivityLog.create({
-        action:     'comment_violence_detected',
-        actor:      req.user._id,
+        action: 'comment_violence_detected',
+        actor: req.user._id,
         targetType: 'comment',
-        target:     post._id.toString(),
-        details:    `⚠️ @${req.user.username} used violent word(s) in a comment: [${detection.words.join(', ')}] — "${content.slice(0, 120)}"`,
-        severity:   severityLabel,
-      }).catch(() => {});
+        target: post._id.toString(),
+        details: `⚠️ @${req.user.username} used violent word(s) in a comment: [${detection.words.join(', ')}] — "${content.slice(0, 120)}"`,
+        severity: severityLabel,
+      }).catch(() => { });
     }
 
     const commentHash = '0x' + crypto.createHash('sha256')
       .update(`${content}${req.user._id}${Date.now()}`)
       .digest('hex');
 
-    post.comments.push({ 
-      author: req.user._id, 
-      content, 
-      commentHash, 
+    post.comments.push({
+      author: req.user._id,
+      content,
+      commentHash,
       postHash: post.postHash,
-      isFlagged: detection.flagged, 
-      flagReason: detection.words.join(', ') 
+      isFlagged: detection.flagged,
+      flagReason: detection.words.join(', ')
     });
-    
+
     await post.save();
     socketSvc.createAndEmitNotification(post.author, req.user._id, 'comment', post._id, `@${req.user.username} commented`);
     const updated = await Post.findById(post._id).populate('comments.author', 'username avatar');
@@ -229,42 +222,90 @@ router.post('/:id/comment', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/posts/:id/comments/:commentId — log violence even on deletion
+// DELETE /api/posts/:id/comments/:commentId — soft delete + full audit trail
 router.delete('/:id/comments/:commentId', authMiddleware, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ error: 'Not found' });
     const comment = post.comments.id(req.params.commentId);
     if (!comment) return res.status(404).json({ error: 'Comment not found' });
+    if (comment.isDeleted) return res.status(404).json({ error: 'Comment already deleted' });
 
-    const isOwner = comment.author.toString() === req.user._id.toString();
-    if (!isOwner && req.user.role === 'user') return res.status(403).json({ error: 'Forbidden' });
+    const isCommentAuthor = comment.author.toString() === req.user._id.toString();
+    const isAdmin = ['admin', 'moderator'].includes(req.user.role);
+    if (!isCommentAuthor && !isAdmin)
+      return res.status(403).json({ error: 'Only the comment author or admin can delete this comment' });
 
-    // If comment had violent words, log the deletion too
+    // ── Violence detection for audit ─────────────────────────
     const detection = detectViolence(comment.content);
     if (detection.flagged) {
       await ActivityLog.create({
-        action:     'violent_comment_deleted',
-        actor:      req.user._id,
-        targetType: 'comment',
-        target:     post._id.toString(),
-        details:    `🗑️ @${req.user._id} DELETED a comment containing violent/banned word(s): [${detection.words.join(', ')}] — "${comment.content.slice(0, 120)}"`,
-        severity:   detection.severity === 'critical' ? 'critical' : 'warning',
-      }).catch(() => {});
+        action: 'violent_comment_deleted', actor: req.user._id, targetType: 'comment',
+        target: post._id.toString(),
+        details: `🗑️ @${req.user.username} DELETED comment with banned words: [${detection.words.join(', ')}] — "${comment.content.slice(0, 120)}"`,
+        severity: detection.severity === 'critical' ? 'critical' : 'warning',
+      }).catch(() => { });
     }
 
+    // ── Activity log ─────────────────────────────────────────
+    await ActivityLog.create({
+      action: 'comment_deleted', actor: req.user._id, targetType: 'comment',
+      target: post._id.toString(), contentHash: comment.commentHash,
+      details: `Comment "${comment.content.slice(0, 80)}" deleted by @${req.user.username}`,
+      severity: detection.flagged ? 'warning' : 'info',
+    }).catch(() => { });
+
+    // ── SQLite immutable audit log ───────────────────────────
     auditDB.logDeletion({
       actorId: req.user._id, actorName: req.user.username,
       targetType: 'comment', targetId: comment._id.toString(),
       contentPreview: comment.content?.slice(0, 200),
+      contentHash: comment.commentHash || '',
       hadViolence: detection.flagged,
       violenceWords: detection.words || [],
-      reason: isOwner ? 'Author deleted comment' : 'Post owner deleted comment'
+      reason: isCommentAuthor ? 'Comment author deleted own comment' : 'Admin/moderator deleted comment',
     });
 
-    comment.deleteOne();
+    // ── Soft delete (isDeleted = true, preserve for audit) ───
+    comment.isDeleted = true;
+    comment.deletedAt = new Date();
+    comment.deletedBy = req.user._id;
     await post.save();
-    res.json({ success: true, message: 'Comment deleted' });
+
+    res.json({ success: true, message: 'Comment soft-deleted and recorded on audit log' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/posts/:id/comments/:commentId/report — only post owner can report a comment
+router.post('/:id/comments/:commentId/report', authMiddleware, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('author', '_id username');
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    const isPostOwner = post.author._id.toString() === req.user._id.toString();
+    const isAdmin = ['admin', 'moderator'].includes(req.user.role);
+    if (!isPostOwner && !isAdmin)
+      return res.status(403).json({ error: 'Only the post author or admin can report comments' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted) return res.status(404).json({ error: 'Comment not found' });
+    if (comment.reportedBy.includes(req.user._id))
+      return res.status(400).json({ error: 'You have already reported this comment' });
+
+    const reason = req.body.reason || 'Reported by post owner';
+    comment.isFlagged = true;
+    comment.flagReason = (comment.flagReason ? comment.flagReason + '; ' : '') + `Reported by @${req.user.username}: ${reason}`;
+    comment.reportedBy.push(req.user._id);
+    await post.save();
+
+    await ActivityLog.create({
+      action: 'comment_reported', actor: req.user._id, targetType: 'comment',
+      target: post._id.toString(), contentHash: comment.commentHash,
+      details: `📢 @${req.user.username} reported comment by @${comment.author}: "${comment.content.slice(0, 100)}" — Reason: ${reason}`,
+      severity: 'warning',
+    }).catch(() => { });
+
+    res.json({ success: true, message: 'Comment reported and flagged for review' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -330,7 +371,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
     if (!post) return res.status(404).json({ error: 'Not found' });
     post.views += 1;
     await post.save();
-    res.json(post);
+    const postJson = post.toJSON();
+    postJson.comments = postJson.comments.filter(c => !c.isDeleted);
+    res.json(postJson);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
 import { formatDistanceToNow } from 'date-fns'
-import { 
+import {
   HiShieldExclamation, HiRefresh, HiTrash, HiCheck, HiBan, HiSearch,
   HiUser, HiDocumentText, HiFlag, HiCheckCircle, HiEyeOff,
   HiChat, HiExclamation, HiShieldCheck, HiLink, HiSpeakerphone,
@@ -20,32 +20,32 @@ const actionIcons = {
 }
 
 export default function AdminPage() {
-  const [tab,    setTab]    = useState(0)
-  const [stats,  setStats]  = useState(null)
-  const [data,   setData]   = useState([])
+  const [tab, setTab] = useState(0)
+  const [stats, setStats] = useState(null)
+  const [data, setData] = useState([])
   const [search, setSearch] = useState('')
   const [scanning, setScanning] = useState(false)
 
-  useEffect(() => { api.get('/admin/dashboard').then(({ data }) => setStats(data)).catch(() => {}) }, [])
+  useEffect(() => { api.get('/admin/dashboard').then(({ data }) => setStats(data)).catch(() => { }) }, [])
 
   useEffect(() => {
     setData([])
-    if (tab === 1) api.get('/admin/activity').then(({ data }) => setData(data)).catch(() => {})
-    if (tab === 2) api.get(`/admin/all-users?q=${search}`).then(({ data }) => setData(data)).catch(() => {})
+    if (tab === 1) api.get('/admin/activity').then(({ data }) => setData(data)).catch(() => { })
+    if (tab === 2) api.get(`/admin/all-users?q=${search}`).then(({ data }) => setData(data)).catch(() => { })
     if (tab === 3) {
       Promise.all([api.get('/admin/flagged-users'), api.get('/admin/flagged-posts'), api.get('/admin/flagged-messages')])
-        .then(([u, p, m]) => setData({ users: u.data, posts: p.data, messages: m.data })).catch(() => {})
+        .then(([u, p, m]) => setData({ users: u.data, posts: p.data, messages: m.data })).catch(() => { })
     }
-    if (tab === 4) api.get('/admin/deletion-log').then(({ data }) => setData(data)).catch(() => {})
-    if (tab === 5) api.get('/admin/pending-verifications').then(({ data }) => setData(data)).catch(() => {})
+    if (tab === 4) api.get('/admin/deletion-log').then(({ data }) => setData(data)).catch(() => { })
+    if (tab === 5) api.get('/admin/pending-verifications').then(({ data }) => setData(data)).catch(() => { })
   }, [tab, search])
 
-  const scanAll    = async () => { setScanning(true); const { data } = await api.post('/admin/analyze-all'); toast.success(`Scanned ${data.analyzed} users!`); setScanning(false) }
+  const scanAll = async () => { setScanning(true); const { data } = await api.post('/admin/analyze-all'); toast.success(`Scanned ${data.analyzed} users!`); setScanning(false) }
   const approvePost = async (id) => { await api.post(`/admin/approve-post/${id}`); toast.success('Post approved'); setData(p => ({ ...p, posts: p.posts?.filter(x => x._id !== id) })) }
-  const removePost  = async (id) => { await api.delete(`/admin/remove-post/${id}`); toast.success('Post hidden + blockchain recorded'); setData(p => ({ ...p, posts: p.posts?.filter(x => x._id !== id) })) }
-  const unflagUser  = async (id) => { await api.post(`/admin/unflag-user/${id}`); toast.success('User unflagged'); setData(p => ({ ...p, users: p.users?.filter(x => x._id !== id) })) }
+  const removePost = async (id) => { await api.delete(`/admin/remove-post/${id}`); toast.success('Post hidden + blockchain recorded'); setData(p => ({ ...p, posts: p.posts?.filter(x => x._id !== id) })) }
+  const unflagUser = async (id) => { await api.post(`/admin/unflag-user/${id}`); toast.success('User unflagged'); setData(p => ({ ...p, users: p.users?.filter(x => x._id !== id) })) }
   const suspendUser = async (id) => { if (!window.confirm('Suspend this user?')) return; await api.post(`/admin/suspend-user/${id}`); toast.success('User suspended + blockchain recorded') }
-  const removeUser  = async (id) => { if (!window.confirm('Remove user?')) return; await api.delete(`/admin/remove-user/${id}`); toast.success('User removed') }
+  const removeUser = async (id) => { if (!window.confirm('Remove user?')) return; await api.delete(`/admin/remove-user/${id}`); toast.success('User removed') }
   const approveVerification = async (id) => {
     await api.post(`/admin/approve-verification/${id}`)
     toast.success('✅ Account Verified on Blockchain')
@@ -86,7 +86,7 @@ export default function AdminPage() {
       {/* ── Admin Credentials Hint ──────────────── */}
       <div style={{ background: 'var(--primary-fixed)', borderLeft: '4px solid var(--primary)', borderRadius: 8, padding: '0.875rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6875rem', color: 'var(--primary)', fontWeight: 700 }}>ADMIN_CREDS:</span>
-        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6875rem', color: 'var(--text-2)' }}>admin1@nexussocial.io / admin@123 &nbsp;|&nbsp; admin2@nexussocial.io / admin@456</span>
+        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6875rem', color: 'var(--text-2)' }}>admin1@snapzy.io / admin@123 &nbsp;|&nbsp; admin2@snapzy.io / admin@456</span>
       </div>
 
       {/* ── Tab Bar ─────────────────────────────── */}
@@ -109,13 +109,13 @@ export default function AdminPage() {
           {/* Stats Bento Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))', gap: '1rem' }}>
             {[
-              ['Total Users',    stats.users,        'var(--primary)',           <HiUsers />],
-              ['Flagged Users',  stats.flaggedUsers,  'var(--danger)',            <HiFlag />],
-              ['Total Posts',    stats.posts,         'var(--primary)',           <HiDocumentText />],
-              ['Flagged Posts',  stats.flaggedPosts,  'var(--danger)',            <HiFlag />],
-              ['Messages',       stats.messages,      'var(--secondary)',         <HiChat />],
-              ['Flagged DMs',    stats.flaggedMsgs,   'var(--warning)',           <HiExclamation />],
-              ['Deleted Posts',  stats.deletedPosts,  'var(--warning)',           <HiTrash />],
+              ['Total Users', stats.users, 'var(--primary)', <HiUsers />],
+              ['Flagged Users', stats.flaggedUsers, 'var(--danger)', <HiFlag />],
+              ['Total Posts', stats.posts, 'var(--primary)', <HiDocumentText />],
+              ['Flagged Posts', stats.flaggedPosts, 'var(--danger)', <HiFlag />],
+              ['Messages', stats.messages, 'var(--secondary)', <HiChat />],
+              ['Flagged DMs', stats.flaggedMsgs, 'var(--warning)', <HiExclamation />],
+              ['Deleted Posts', stats.deletedPosts, 'var(--warning)', <HiTrash />],
             ].map(([label, value, color, icon]) => (
               <div key={label} className="card-lift" style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '1.25rem', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
                 <div style={{ fontSize: 20, marginBottom: 4 }}>{icon}</div>
@@ -142,7 +142,7 @@ export default function AdminPage() {
                 ● ON_CHAIN_STATS
               </p>
               <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                {['accounts','posts','messages','verifications','flagged','deletions'].map(k => (
+                {['accounts', 'posts', 'messages', 'verifications', 'flagged', 'deletions'].map(k => (
                   <div key={k}>
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{k}: </span>
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6875rem', color: 'var(--tertiary-container)', fontWeight: 700 }}>
@@ -275,23 +275,70 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ─── Tab 4: Deletion Log ───────────────── */}
+      {/* ─── Tab 4: Deletion Log (SQLite Audit) ─── */}
       {tab === 4 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              ● IMMUTABLE SQLite AUDIT LOG — {data.length || 0} RECORDS
+            </span>
+          </div>
           {data.length === 0 && (
             <div style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', boxShadow: 'var(--shadow)' }}>No deletions recorded yet.</div>
           )}
-          {data.map?.(p => (
-            <div key={p._id} style={{ background: 'var(--bg-2)', borderRadius: 10, padding: '1rem 1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.875rem', borderLeft: '4px solid var(--warning)', boxShadow: 'var(--shadow)' }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>🗑️</span>
+          {data.map?.((d) => (
+            <div key={d.id} style={{
+              background: 'var(--bg-2)', borderRadius: 10, padding: '1rem 1.25rem',
+              display: 'flex', alignItems: 'flex-start', gap: '0.875rem',
+              borderLeft: `4px solid ${d.target_type === 'comment' ? 'var(--secondary)' : 'var(--danger)'}`,
+              boxShadow: 'var(--shadow)',
+            }}>
+              <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>
+                {d.target_type === 'comment' ? '💬' : '🗑️'}
+              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text)', fontStyle: 'italic' }}>"{p.content?.slice(0, 120)}{p.content?.length > 120 ? '…' : ''}"</p>
-                <p style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  Author: @{p.author?.username} · Deleted by: @{p.deletedBy?.username || 'admin'} · {p.deletedAt ? formatDistanceToNow(new Date(p.deletedAt), { addSuffix: true }) : ''}
-                </p>
-                {p.postHash && <p style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.625rem', color: 'var(--tertiary-container)', marginTop: 4 }}>Hash: {p.postHash}</p>}
-                {p.blockchainDeletionTx && <p style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.625rem', color: 'var(--primary)', marginTop: 2 }}>⛓️ TX: {p.blockchainDeletionTx}</p>}
+                {/* Type badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontFamily: "'Space Mono', monospace", fontSize: '0.5rem', fontWeight: 700,
+                    padding: '2px 8px', borderRadius: 9999, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    background: d.target_type === 'comment' ? 'var(--secondary-dim)' : 'var(--danger-dim)',
+                    color: d.target_type === 'comment' ? 'var(--secondary)' : 'var(--danger)',
+                  }}>{d.target_type} DELETED</span>
+                  {d.had_violence === 1 && (
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.5rem', fontWeight: 700, padding: '2px 8px', borderRadius: 9999, background: 'var(--warning-dim)', color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      ⚠ VIOLENCE DETECTED
+                    </span>
+                  )}
+                </div>
+                {/* Content preview */}
+                {d.content_preview && (
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text)', fontStyle: 'italic', marginBottom: 4 }}>
+                    "{d.content_preview.slice(0, 120)}{d.content_preview.length > 120 ? '…' : ''}"
+                  </p>
+                )}
+                {/* Actor / target info */}
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.5875rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                  <span>Deleted by: <span style={{ color: 'var(--text-2)', fontWeight: 700 }}>@{d.actor_name}</span></span>
+                  <span>ID: <span style={{ color: 'var(--text-muted)' }}>{d.target_id?.slice(-10)}</span></span>
+                  {d.reason && <span>Reason: {d.reason}</span>}
+                </div>
+                {/* Hash */}
+                {d.content_hash && (
+                  <p style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.5625rem', color: 'var(--success)', marginTop: 2 }}>
+                    ⛓ HASH: {d.content_hash}
+                  </p>
+                )}
+                {/* Violence words */}
+                {d.violence_words && (
+                  <p style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.5625rem', color: 'var(--danger)', marginTop: 2 }}>
+                    Flagged words: {d.violence_words}
+                  </p>
+                )}
               </div>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.5625rem', color: 'var(--text-muted)', flexShrink: 0, marginTop: 2, whiteSpace: 'nowrap' }}>
+                {d.deleted_at ? (() => { try { return formatDistanceToNow(new Date(d.deleted_at), { addSuffix: true }) } catch { return d.deleted_at } })() : ''}
+              </span>
             </div>
           ))}
         </div>

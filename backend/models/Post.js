@@ -1,38 +1,43 @@
 const mongoose = require('mongoose');
-const crypto   = require('crypto');
+const crypto = require('crypto');
 
 const commentSchema = new mongoose.Schema({
-  author:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content:     { type: String, required: true },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
   commentHash: { type: String }, // Cryptographic anchor for the immutable ledger
-  postHash:    { type: String },
-  likes:       [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  isFlagged:   { type: Boolean, default: false },
-  flagReason:  { type: String, default: '' }
+  postHash: { type: String },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  isFlagged: { type: Boolean, default: false },
+  flagReason: { type: String, default: '' },
+  reportedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  // Soft-delete fields (mirror post pattern)
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 const postSchema = new mongoose.Schema({
-  author:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content:   { type: String, required: true, maxlength: 2000 },
-  media:     [{ url: String, type: { type: String, enum: ['image','video'] } }],
-  hashtags:  [{ type: String }],
-  mentions:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  likes:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  reposts:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  comments:  [commentSchema],
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true, maxlength: 2000 },
+  media: [{ url: String, type: { type: String, enum: ['image', 'video'] } }],
+  hashtags: [{ type: String }],
+  mentions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  reposts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  comments: [commentSchema],
   // Blockchain
-  postHash:          { type: String },
-  blockchainTxHash:  { type: String, default: '' },
-  blockchainStatus:  { type: String, enum: ['pending','confirmed','failed'], default: 'pending' },
+  postHash: { type: String },
+  blockchainTxHash: { type: String, default: '' },
+  blockchainStatus: { type: String, enum: ['pending', 'confirmed', 'failed'], default: 'pending' },
   // Moderation
-  isFlagged:       { type: Boolean, default: false },
-  flagReason:      { type: String, default: '' },
+  isFlagged: { type: Boolean, default: false },
+  flagReason: { type: String, default: '' },
   moderationScore: { type: Number, default: 0 },
-  isHidden:        { type: Boolean, default: false },
-  isDeleted:       { type: Boolean, default: false },
-  deletedAt:       { type: Date },
-  deletedBy:       { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  views:           { type: Number, default: 0 },
+  isHidden: { type: Boolean, default: false },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  views: { type: Number, default: 0 },
 }, { timestamps: true });
 
 postSchema.pre('save', function (next) {

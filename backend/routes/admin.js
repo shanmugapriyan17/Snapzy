@@ -1,12 +1,12 @@
 const router = require('express').Router();
-const User   = require('../models/User');
-const Post   = require('../models/Post');
+const User = require('../models/User');
+const Post = require('../models/Post');
 const Message = require('../models/Message');
 const ActivityLog = require('../models/ActivityLog');
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 const blockchain = require('../services/blockchainService');
-const mlService  = require('../services/mlService');
-const crypto     = require('crypto');
+const mlService = require('../services/mlService');
+const crypto = require('crypto');
 // POST /api/admin/submit-hash-verification — User submits ANY hash (post/message/comment/account) for admin review
 router.post('/submit-hash-verification', authMiddleware, async (req, res) => {
   try {
@@ -14,12 +14,12 @@ router.post('/submit-hash-verification', authMiddleware, async (req, res) => {
     if (!hash) return res.status(400).json({ error: 'Hash is required' });
 
     await ActivityLog.create({
-      action:     'hash_verification_request',
-      actor:      req.user._id,
+      action: 'hash_verification_request',
+      actor: req.user._id,
       targetType: hashType || 'post',
-      target:     hash,
-      details:    `@${req.user.username} submitted hash for admin verification. Context: ${context || 'N/A'} | Hash: ${hash}`,
-      severity:   'info',
+      target: hash,
+      details: `@${req.user.username} submitted hash for admin verification. Context: ${context || 'N/A'} | Hash: ${hash}`,
+      severity: 'info',
       contentHash: hash,
     });
 
@@ -104,15 +104,15 @@ router.get('/dashboard', authMiddleware, adminMiddleware, async (req, res) => {
       if (stats) {
         chainStats = {
           connected: true,
-          accounts:       Number(stats[0]),
-          posts:          Number(stats[1]),
-          messages:       Number(stats[2]),
-          verifications:  Number(stats[3]),
-          flagged:        Number(stats[4]),
-          deletions:      Number(stats[5]),
+          accounts: Number(stats[0]),
+          posts: Number(stats[1]),
+          messages: Number(stats[2]),
+          verifications: Number(stats[3]),
+          flagged: Number(stats[4]),
+          deletions: Number(stats[5]),
         };
       }
-    } catch {}
+    } catch { }
 
     res.json({ users, flaggedUsers, posts, flaggedPosts, messages: msgs, flaggedMsgs, deletedPosts, chainStats });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -121,7 +121,7 @@ router.get('/dashboard', authMiddleware, adminMiddleware, async (req, res) => {
 // GET /api/admin/activity — live activity feed
 router.get('/activity', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const page  = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const logs = await ActivityLog.find()
       .sort({ createdAt: -1 })
@@ -172,23 +172,13 @@ router.get('/flagged-messages', authMiddleware, adminMiddleware, async (req, res
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// GET /api/admin/deletion-log — all deleted posts with blockchain proof
+// GET /api/admin/deletion-log — ALL deletions (posts + comments) from immutable SQLite audit
 router.get('/deletion-log', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const deletedPosts = await Post.find({ isDeleted: true })
-      .sort({ deletedAt: -1 })
-      .populate('author', 'username fullName avatar')
-      .populate('deletedBy', 'username fullName');
-    // Also get related activity logs with blockchain hashes
-    const hashes = deletedPosts.map(p => p.postHash).filter(Boolean);
-    const logs = await ActivityLog.find({ contentHash: { $in: hashes }, action: 'blockchain_tx' });
-    const logMap = {};
-    logs.forEach(l => { logMap[l.contentHash] = l.blockchainTxHash; });
-    const result = deletedPosts.map(p => ({
-      ...p.toJSON(),
-      blockchainDeletionTx: logMap[p.postHash] || null
-    }));
-    res.json(result);
+    const auditDB = require('../services/auditDB');
+    const limit = parseInt(req.query.limit) || 100;
+    const deletions = auditDB.getRecentDeletions(limit);
+    res.json(deletions);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -222,7 +212,7 @@ router.post('/suspend-user/:id', authMiddleware, adminMiddleware, async (req, re
     await ActivityLog.create({ action: 'user_suspended', actor: req.user._id, target: req.params.id, targetType: 'user', details: `Admin suspended @${user.username}`, severity: 'critical' });
     // Blockchain record
     setImmediate(async () => {
-      try { await blockchain.flagAccount(user.accountHash, 'Suspended by admin'); } catch {}
+      try { await blockchain.flagAccount(user.accountHash, 'Suspended by admin'); } catch { }
     });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -261,7 +251,7 @@ router.delete('/remove-user/:id', authMiddleware, adminMiddleware, async (req, r
     await user.save();
     await ActivityLog.create({ action: 'user_deleted', actor: req.user._id, target: req.params.id, targetType: 'user', details: `Admin removed @${user.username}`, severity: 'critical' });
     setImmediate(async () => {
-      try { await blockchain.flagAccount(user.accountHash, 'Removed by admin'); } catch {}
+      try { await blockchain.flagAccount(user.accountHash, 'Removed by admin'); } catch { }
     });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -279,7 +269,7 @@ router.delete('/remove-post/:id', authMiddleware, adminMiddleware, async (req, r
     await post.save();
     await ActivityLog.create({ action: 'post_hidden', actor: req.user._id, target: req.params.id, targetType: 'post', details: 'Admin hid post', contentHash: post.postHash, severity: 'warning' });
     setImmediate(async () => {
-      try { await blockchain.recordDeletion(post.postHash, req.user.accountHash, 'Admin removed content'); } catch {}
+      try { await blockchain.recordDeletion(post.postHash, req.user.accountHash, 'Admin removed content'); } catch { }
     });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }

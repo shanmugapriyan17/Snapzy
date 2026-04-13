@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import { FiTrendingUp, FiUserPlus, FiActivity, FiCpu, FiSearch, FiShield, FiList } from 'react-icons/fi'
 
 const S = {
-  section: { background:'transparent', padding:'1rem 0', marginBottom:'0.875rem' },
-  secHead: { display:'flex', alignItems:'center', gap:6, fontSize:'0.6875rem', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.875rem' },
+  section: { background: 'transparent', padding: '1rem 0', marginBottom: '0.875rem' },
+  secHead: { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem' },
 }
 
 function SzyChatWidget() {
@@ -35,7 +35,7 @@ function SzyChatWidget() {
     setMessages(newMessages)
     setLoading(true)
     try {
-      const { data } = await api.post('/chat', { message: userMsg, history: newMessages.slice(0,-1), isSidebar: true })
+      const { data } = await api.post('/chat', { message: userMsg, history: newMessages.slice(0, -1), isSidebar: true })
       setMessages(prev => [...prev, { role: 'szy', text: data.reply }])
     } catch {
       setMessages(prev => [...prev, { role: 'szy', text: 'Error connecting.' }])
@@ -44,19 +44,19 @@ function SzyChatWidget() {
   }
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:'0.5rem', marginTop:'0.5rem', fontFamily: "'Poppins', sans-serif" }}>
-      <div ref={containerRef} style={{ maxHeight: 150, overflowY: 'auto', display:'flex', flexDirection:'column', gap:'0.5rem', scrollbarWidth:'thin' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', fontFamily: "'Poppins', sans-serif" }}>
+      <div ref={containerRef} style={{ maxHeight: 150, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', scrollbarWidth: 'thin' }}>
         {messages.map((m, i) => (
-          <div key={i} style={{ alignSelf: m.role==='user'?'flex-end':'flex-start', background: m.role==='user'?'var(--primary)':'var(--bg)', color: m.role==='user'?'#fff':'var(--text)', padding:'0.5rem 0.75rem', borderRadius:8, fontSize:'0.75rem', maxWidth:'85%' }}>
+          <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', background: m.role === 'user' ? 'var(--primary)' : 'var(--bg)', color: m.role === 'user' ? '#fff' : 'var(--text)', padding: '0.5rem 0.75rem', borderRadius: 8, fontSize: '0.75rem', maxWidth: '85%' }}>
             {m.text}
           </div>
         ))}
-        {loading && <div style={{ fontSize:'0.75rem', color:'var(--text-muted)' }}>Szy is typing...</div>}
+        {loading && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Szy is typing...</div>}
         <div ref={bottomRef} />
       </div>
-      <form onSubmit={handleSend} style={{ display:'flex', gap:'0.25rem' }}>
-        <input className="input" placeholder="Ask something..." value={input} onChange={e=>setInput(e.target.value)} style={{ flex:1, padding:'0.4rem 0.75rem', fontSize:'0.75rem', borderRadius:999 }} />
-        <button type="submit" disabled={!input.trim()||loading} style={{ background:'var(--primary)', color:'#fff', border:'none', borderRadius:'50%', width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', cursor:input.trim()&&!loading?'pointer':'not-allowed' }}>
+      <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.25rem' }}>
+        <input className="input" placeholder="Ask something..." value={input} onChange={e => setInput(e.target.value)} style={{ flex: 1, padding: '0.4rem 0.75rem', fontSize: '0.75rem', borderRadius: 999 }} />
+        <button type="submit" disabled={!input.trim() || loading} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed' }}>
           <FiCpu size={12} />
         </button>
       </form>
@@ -65,30 +65,30 @@ function SzyChatWidget() {
 }
 
 export default function RightPanel() {
-  const [online,   setOnline]   = useState([])
+  const [online, setOnline] = useState([])
   const [trending, setTrending] = useState([])
 
   useEffect(() => {
-    api.get('/users/online').then(({ data }) => setOnline(data)).catch(() => {})
-    api.get('/posts/trending').then(({ data }) => setTrending(data)).catch(() => {})
+    api.get('/users/online').then(({ data }) => setOnline(data)).catch(() => { })
+    api.get('/posts/trending').then(({ data }) => setTrending(data)).catch(() => { })
   }, [])
 
   return (
-    <div style={{ paddingTop:'0.5rem' }}>
+    <div style={{ paddingTop: '0.5rem' }}>
       {/* Search */}
-      <div style={{ position:'relative', marginBottom:'1rem' }}>
-        <FiSearch size={14} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }} />
-        <input type="text" placeholder="Search Snapzy…" className="input" style={{ paddingLeft:'2rem', borderRadius:999, fontSize:'0.8125rem' }} />
+      <div style={{ position: 'relative', marginBottom: '1rem' }}>
+        <FiSearch size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        <input type="text" placeholder="Search Snapzy…" className="input" style={{ paddingLeft: '2rem', borderRadius: 999, fontSize: '0.8125rem' }} />
       </div>
 
       {/* SZY AI CHAT WIDGET */}
       <section style={S.section}>
-        <div style={{ background:'var(--bg-3)', padding:'0.75rem', borderRadius:12, border:'1px solid var(--primary)', display:'flex', flexDirection:'column', gap:'0.5rem' }}>
+        <div style={{ background: 'var(--bg-3)', padding: '0.75rem', borderRadius: 12, border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FiCpu size={16} style={{ color:'var(--primary)' }} />
-            <span style={{ fontSize:'0.8125rem', fontWeight:800, color:'var(--primary)' }}>Szy AI Assistant</span>
+            <FiCpu size={16} style={{ color: 'var(--primary)' }} />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--primary)' }}>Szy AI Assistant</span>
           </div>
-          <p style={{ fontSize:'0.75rem', color:'var(--text-2)', lineHeight:1.4 }}>Ask Szy questions about the network, security, or blockchain logic.</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', lineHeight: 1.4 }}>Ask Szy questions about the network, security, or blockchain logic.</p>
           <SzyChatWidget />
         </div>
       </section>
@@ -96,7 +96,7 @@ export default function RightPanel() {
       {/* Analytics Panels from Explore */}
       <div className="grid grid-cols-1 gap-4 mb-4 mt-4">
         {/* Global AI Sentiment */}
-        <div className="card p-5 rounded-2xl border" style={{borderColor: 'var(--border)'}}>
+        <div className="card p-5 rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
           <h3 className="font-bold text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text)' }}>Global AI Sentiment</h3>
           <div className="flex justify-between items-center mb-2">
             <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>OVERALL INDEX</span>
@@ -112,43 +112,43 @@ export default function RightPanel() {
         </div>
 
         {/* Network Integrity */}
-        <div className="card p-5 rounded-2xl border" style={{borderColor: 'var(--border)'}}>
-           <h3 className="font-bold text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text)' }}>Network Integrity</h3>
-           <div className="space-y-3">
-             <div className="flex justify-between items-center">
-               <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>ACTIVE NODES</span>
-               <span className="text-xs font-bold font-mono" style={{ color: 'var(--text)' }}>1,249,031</span>
-             </div>
-             <div className="flex justify-between items-center">
-               <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>TPS AVERAGE</span>
-               <span className="text-xs font-bold font-mono" style={{ color: 'var(--secondary)' }}>4.5K</span>
-             </div>
-             <div className="flex justify-between items-center">
-               <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>SYNC STATUS</span>
-               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full font-mono text-white" style={{ background: 'var(--success)' }}>OPTIMAL</span>
-             </div>
-           </div>
+        <div className="card p-5 rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
+          <h3 className="font-bold text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text)' }}>Network Integrity</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>ACTIVE NODES</span>
+              <span className="text-xs font-bold font-mono" style={{ color: 'var(--text)' }}>1,249,031</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>TPS AVERAGE</span>
+              <span className="text-xs font-bold font-mono" style={{ color: 'var(--secondary)' }}>4.5K</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>SYNC STATUS</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full font-mono text-white" style={{ background: 'var(--success)' }}>OPTIMAL</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Suggested Users */}
       <section style={S.section}>
-        <div style={S.secHead}><FiUserPlus size={12} style={{ color:'var(--primary)' }} /> Who to Follow</div>
+        <div style={S.secHead}><FiUserPlus size={12} style={{ color: 'var(--primary)' }} /> Who to Follow</div>
         <SuggestedUsers />
       </section>
 
       {/* Online Now */}
       {online.length > 0 && (
         <section style={S.section}>
-          <div style={S.secHead}><FiActivity size={12} style={{ color:'var(--success)' }} /> Online Now</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={S.secHead}><FiActivity size={12} style={{ color: 'var(--success)' }} /> Online Now</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {online.map(u => (
               <Link key={u._id} to={`/profile/${u.username}`}
-                style={{ display:'flex', alignItems:'center', gap:8, padding:'0.3125rem 0.375rem', borderRadius:6, color:'var(--text)', textDecoration:'none', transition:'background 0.15s' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.3125rem 0.375rem', borderRadius: 6, color: 'var(--text)', textDecoration: 'none', transition: 'background 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-3)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--success)', flexShrink:0, animation:'pulseSlow 2s infinite' }} />
-                <span style={{ fontSize:'0.8125rem' }}>@{u.username}</span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', flexShrink: 0, animation: 'pulseSlow 2s infinite' }} />
+                <span style={{ fontSize: '0.8125rem' }}>@{u.username}</span>
               </Link>
             ))}
           </div>
@@ -156,7 +156,7 @@ export default function RightPanel() {
       )}
 
       {/* Footer */}
-      <div style={{ padding:'0.25rem 0.25rem', fontSize:'0.6875rem', color:'var(--text-muted)', lineHeight:1.8 }}>
+      <div style={{ padding: '0.25rem 0.25rem', fontSize: '0.6875rem', color: 'var(--text-muted)', lineHeight: 1.8 }}>
         <p>© 2026 Snapzy Protocol</p>
       </div>
     </div>
@@ -166,7 +166,7 @@ export default function RightPanel() {
 function NetworkPulse() {
   const [blockHeight, setBlockHeight] = useState(14290000)
   const [tps, setTps] = useState(4521)
-  
+
   // Simulate live block incrementing
   useEffect(() => {
     const iv = setInterval(() => {
@@ -177,24 +177,24 @@ function NetworkPulse() {
   }, [])
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:'0.75rem' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontSize:'0.6875rem', color:'var(--text-muted)', fontWeight:600, textTransform:'uppercase' }}>Block Height</span>
-        <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.875rem', fontWeight:700, color:'var(--text)' }}>#{blockHeight.toLocaleString()}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Block Height</span>
+        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)' }}>#{blockHeight.toLocaleString()}</span>
       </div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontSize:'0.6875rem', color:'var(--text-muted)', fontWeight:600, textTransform:'uppercase' }}>Network TPS</span>
-        <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.8125rem', fontWeight:600, color:'var(--secondary)' }}>{tps} Tx/s</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Network TPS</span>
+        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.8125rem', fontWeight: 600, color: 'var(--secondary)' }}>{tps} Tx/s</span>
       </div>
-      
+
       {/* AI Toxicity Index Widget */}
-      <div style={{ background:'var(--bg-3)', padding:'0.75rem', borderRadius:10, marginTop:4, border:'1px solid var(--border)' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-          <span style={{ fontSize:'0.625rem', color:'var(--text-muted)', fontWeight:700, letterSpacing:'0.05em' }}>AI TOXICITY RISK</span>
-          <span style={{ fontSize:'0.625rem', color:'var(--success)', fontWeight:700 }}>LOW — 2%</span>
+      <div style={{ background: 'var(--bg-3)', padding: '0.75rem', borderRadius: 10, marginTop: 4, border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>AI TOXICITY RISK</span>
+          <span style={{ fontSize: '0.625rem', color: 'var(--success)', fontWeight: 700 }}>LOW — 2%</span>
         </div>
-        <div style={{ height:4, width:'100%', background:'var(--bg-5)', borderRadius:4, overflow:'hidden' }}>
-          <div style={{ height:'100%', width:'2%', background:'var(--success)' }} />
+        <div style={{ height: 4, width: '100%', background: 'var(--bg-5)', borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '2%', background: 'var(--success)' }} />
         </div>
       </div>
     </div>
@@ -226,12 +226,12 @@ function RecentLedger() {
   }, [])
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {txs.map(tx => (
-        <div key={tx.id} className="animate-fade-up" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background:'var(--bg-3)', padding:'0.5rem 0.75rem', borderRadius:8, border:'1px solid var(--border)' }}>
-          <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.6875rem', color:'var(--hash-color)' }}>{tx.hash}</span>
-          <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.625rem', color:'var(--text-muted)' }}>{tx.type}</span>
-          <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.6875rem', fontWeight:700, color:'var(--text)' }}>{tx.amt}</span>
+        <div key={tx.id} className="animate-fade-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)', padding: '0.5rem 0.75rem', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.6875rem', color: 'var(--hash-color)' }}>{tx.hash}</span>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.625rem', color: 'var(--text-muted)' }}>{tx.type}</span>
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text)' }}>{tx.amt}</span>
         </div>
       ))}
     </div>
@@ -242,29 +242,29 @@ function SuggestedUsers() {
   const [users, setUsers] = useState([])
   const [followed, setFollowed] = useState(new Set())
   useEffect(() => {
-    api.get('/users/suggested').then(({ data }) => setUsers(data.slice(0, 5))).catch(() => {})
+    api.get('/users/suggested').then(({ data }) => setUsers(data.slice(0, 5))).catch(() => { })
   }, [])
 
   const follow = async (id) => {
-    try { await api.put(`/users/${id}/follow`); setFollowed(prev => new Set([...prev, id])) } catch {}
+    try { await api.put(`/users/${id}/follow`); setFollowed(prev => new Set([...prev, id])) } catch { }
   }
 
-  if (users.length === 0) return <p style={{ fontSize:'0.75rem', color:'var(--text-muted)' }}>No suggestions yet</p>
+  if (users.length === 0) return <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No suggestions yet</p>
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       {users.map(u => (
-        <div key={u._id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <Link to={`/profile/${u.username}`} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none', minWidth:0 }}>
-            <div style={{ width:34, height:34, borderRadius:'50%', background:'var(--primary-container)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--inverse-text)', fontSize:13, fontWeight:700, flexShrink:0 }}>
+        <div key={u._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link to={`/profile/${u.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', minWidth: 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--inverse-text)', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
               {u.username?.[0]?.toUpperCase()}
             </div>
-            <div style={{ overflow:'hidden' }}>
-              <p style={{ fontSize:'0.8125rem', fontWeight:600, color:'var(--text)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{u.fullName}</p>
-              <p style={{ fontSize:'0.6875rem', color:'var(--text-muted)' }}>@{u.username}</p>
+            <div style={{ overflow: 'hidden' }}>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.fullName}</p>
+              <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>@{u.username}</p>
             </div>
           </Link>
-          <button className="btn-ghost" style={{ padding:'0.25rem 0.75rem', fontSize:'0.6875rem', border:'1px solid var(--border)' }} onClick={() => follow(u._id)} disabled={followed.has(u._id)}>
+          <button className="btn-ghost" style={{ padding: '0.25rem 0.75rem', fontSize: '0.6875rem', border: '1px solid var(--border)' }} onClick={() => follow(u._id)} disabled={followed.has(u._id)}>
             {followed.has(u._id) ? 'Followed' : 'Follow'}
           </button>
         </div>
