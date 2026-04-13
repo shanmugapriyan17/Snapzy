@@ -22,16 +22,28 @@ export default function SettingsPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const { data } = await api.put('/users/profile', { fullName, bio, location, website, dob })
+      const formData = new FormData()
+      formData.append('fullName', fullName)
+      formData.append('bio', bio)
+      formData.append('location', location)
+      formData.append('website', website)
+      formData.append('dob', dob)
+      if (fileInputRef.current?.files?.[0]) {
+        formData.append('avatar', fileInputRef.current.files[0])
+      }
+
+      const { data } = await api.put('/users/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       // Merge updated fields into auth context (real-time sync — no reload needed)
       const updatedUser = {
         ...user,
-        fullName:  data.fullName  || fullName,
-        bio:       data.bio       || bio,
-        location:  data.location  || location,
-        website:   data.website   || website,
-        dob:       data.dob       || dob,
-        avatar:    data.avatar    || user?.avatar,
+        fullName: data.fullName || fullName,
+        bio: data.bio || bio,
+        location: data.location || location,
+        website: data.website || website,
+        dob: data.dob || dob,
+        avatar: data.avatar || user?.avatar,
       }
       updateUser(updatedUser)
       toast.success('Profile updated! Changes reflected across the platform.')
@@ -63,20 +75,29 @@ export default function SettingsPage() {
           {activeTab === 'profile' && (
             <form onSubmit={handleProfileUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem' }}>Public Profile</h2>
-              
+
               {/* Avatar Uploader UI */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--bg-3)', overflow: 'hidden', border: '2px solid var(--border)' }} className="shrink-0">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background:'linear-gradient(135deg,#004ac6,#6b38d4)', color: '#fff', fontSize: 28, fontWeight: 700 }}>
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#004ac6,#6b38d4)', color: '#fff', fontSize: 28, fontWeight: 700 }}>
                       {user?.username?.[0]?.toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div>
-                  <button type="button" className="btn-ghost" onClick={() => toast.error('Avatar upload requires cloud bucket configured.')} style={{ marginBottom: '0.25rem' }}>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    hidden
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files[0]) setAvatarPreview(URL.createObjectURL(e.target.files[0]))
+                    }}
+                  />
+                  <button type="button" className="btn-ghost" onClick={() => fileInputRef.current?.click()} style={{ marginBottom: '0.25rem' }}>
                     Change Avatar
                   </button>
                   <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>JPG, GIF or PNG. 1MB max.</p>
@@ -192,8 +213,8 @@ function TabButton({ active, onClick, icon, label }) {
         transition: 'all 0.2s', width: '100%',
         fontFamily: "'Poppins', sans-serif", fontSize: '0.875rem'
       }}
-      onMouseOver={e => { if(!active) { e.currentTarget.style.background = 'var(--bg-2)'; e.currentTarget.style.color = 'var(--text)'; } }}
-      onMouseOut={e => { if(!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-2)'; } }}
+      onMouseOver={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-2)'; e.currentTarget.style.color = 'var(--text)'; } }}
+      onMouseOut={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-2)'; } }}
     >
       {icon}
       {label}
@@ -209,7 +230,7 @@ function ToggleRow({ label, desc, defaultChecked }) {
         <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem' }}>{label}</p>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{desc}</p>
       </div>
-      <button 
+      <button
         type="button"
         onClick={() => setChecked(!checked)}
         style={{ width: 44, height: 24, borderRadius: 12, background: checked ? 'var(--primary)' : 'var(--bg-3)', position: 'relative', border: 'none', cursor: 'pointer', transition: 'background 0.3s' }}
