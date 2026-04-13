@@ -3,7 +3,7 @@ import axios from 'axios'
 const baseURL = import.meta.env.VITE_BACKEND_URL
   ? `${import.meta.env.VITE_BACKEND_URL}/api`
   : 'https://snapzy-api.onrender.com/api'
-const api = axios.create({ baseURL, timeout: 15000 })
+const api = axios.create({ baseURL, timeout: 60000 })
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('nexus_token')

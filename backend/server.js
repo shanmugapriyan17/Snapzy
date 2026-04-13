@@ -15,14 +15,23 @@ require('./services/auditDB'); // Initialize SQLite immutable audit log on start
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: ['http://localhost:5173', 'http://localhost:5174', process.env.FRONTEND_URL || 'http://localhost:5173'], methods: ['GET', 'POST'] }
+  cors: {
+    origin: [
+      'https://snapzy-six.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      process.env.FRONTEND_URL,
+    ].filter(Boolean),
+    methods: ['GET', 'POST']
+  }
 });
 
 const ALLOWED_ORIGINS = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'https://snapzy-six.vercel.app',
+  process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://localhost:5174',
-]
+].filter(Boolean)
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
