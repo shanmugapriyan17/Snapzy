@@ -4,7 +4,7 @@ let socket = null
 
 export function connectSocket(userId) {
   if (socket?.connected) return socket
-  const socketUrl = import.meta.env.VITE_BACKEND_URL || '/'
+  const socketUrl = import.meta.env.VITE_BACKEND_URL || 'https://snapzy-api.onrender.com'
   socket = io(socketUrl, { auth: { userId }, transports: ['websocket'] })
   socket.on('connect', () => console.log('[Socket] Connected'))
   socket.on('connect_error', (e) => console.warn('[Socket] Error:', e.message))
