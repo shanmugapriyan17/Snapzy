@@ -1,7 +1,5 @@
 const router = require('express').Router();
 const crypto = require('crypto');
-const multer = require('multer');
-const path = require('path');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
@@ -10,21 +8,6 @@ const contentFilter = require('../middleware/contentFilter');
 const auditDB = require('../services/auditDB');
 const blockchain = require('../services/blockchainService');
 const socketSvc = require('../services/socketService');
-
-// ─── Multer config for image uploads ─────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.resolve(__dirname, '../uploads')),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`)
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype.split('/')[1]);
-    cb(ok ? null : new Error('Only images allowed'), ok);
-  }
-});
 
 // ─── Violence / Banned word list (comprehensive) ─────────────────────────────
 const VIOLENCE_WORDS = {
@@ -102,16 +85,15 @@ router.get('/trending', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/posts — with optional image upload
-router.post('/', authMiddleware, upload.single('image'), contentFilter, async (req, res) => {
+// POST /api/posts — with optional base64 image
+router.post('/', authMiddleware, contentFilter, async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, imageBase64 } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
 
     // 🚨 Violence / banned word detection for posts
     const detection = detectViolence(content);
     if (detection.flagged) {
-      // Log to admin dashboard
       await ActivityLog.create({
         action: 'post_violence_detected', actor: req.user._id, targetType: 'post',
         target: req.user._id,
@@ -127,9 +109,9 @@ router.post('/', authMiddleware, upload.single('image'), contentFilter, async (r
       flagReason: (req.body._flagReason ? req.body._flagReason + ' | ' : '') + detection.words.join(', '),
     };
 
-    // Attach uploaded image
-    if (req.file) {
-      postData.media = [{ url: `/uploads/${req.file.filename}`, type: 'image' }];
+    // Attach base64 image (stored directly in MongoDB — no filesystem required)
+    if (imageBase64) {
+      postData.media = [{ url: imageBase64, type: 'image' }];
     }
 
     const post = await Post.create(postData);
@@ -156,7 +138,7 @@ router.post('/', authMiddleware, upload.single('image'), contentFilter, async (r
     // 🗄️ PERMANENTLY log to SQLite audit DB
     auditDB.logPost({
       authorId: req.user._id, authorName: req.user.username,
-      content, mediaUrl: req.file ? `/uploads/${req.file.filename}` : '',
+      content, mediaUrl: imageBase64 ? '[base64-image]' : '',
       isFlagged: postData.isFlagged, flagReason: postData.flagReason,
       postHash: post.postHash, bcTxHash: '', createdAt: post.createdAt,
     });
