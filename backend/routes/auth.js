@@ -1,10 +1,10 @@
-const router  = require('express').Router();
-const bcrypt  = require('bcryptjs');
-const jwt     = require('jsonwebtoken');
-const crypto  = require('crypto');
-const User    = require('../models/User');
+const router = require('express').Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const User = require('../models/User');
 const blockchain = require('../services/blockchainService');
-const mlService  = require('../services/mlService');
+const mlService = require('../services/mlService');
 
 const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET || 'snapzy_super_secret_jwt_key_2024', { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
@@ -67,6 +67,28 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', require('../middleware/authMiddleware').authMiddleware, async (req, res) => {
   res.json(req.user);
+});
+
+// PUT /api/auth/password
+router.put('/password', require('../middleware/authMiddleware').authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ error: 'Current and new password are required' });
+    if (newPassword.length < 6)
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+
+    const user = await User.findById(req.user._id).select('+password');
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch)
+      return res.status(401).json({ error: 'Current password is incorrect' });
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

@@ -1,25 +1,10 @@
 const router = require('express').Router();
 const crypto = require('crypto');
-const multer = require('multer');
-const path = require('path');
 const User = require('../models/User');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const blockchain = require('../services/blockchainService');
 const mlService = require('../services/mlService');
 const socketSvc = require('../services/socketService');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.resolve(__dirname, '../uploads')),
-  filename: (req, file, cb) => cb(null, `user-${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`),
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ok = /jpeg|jpg|png|gif|webp/.test(path.extname(file.originalname).toLowerCase());
-    cb(ok ? null : new Error('Images only'), ok);
-  },
-});
 
 // GET /api/users/search
 router.get('/search', authMiddleware, async (req, res) => {
@@ -94,20 +79,36 @@ router.post('/:id/follow', authMiddleware, async (req, res) => {
 });
 
 // PUT /api/users/profile
-router.put('/profile', authMiddleware, upload.single('avatar'), async (req, res) => {
-  const { fullName, bio, coverImage, location, website, dob } = req.body;
-  const updateData = { fullName, bio, coverImage };
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const { fullName, bio, avatar, coverImage, location, website, dob } = req.body;
+    const updateData = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (coverImage !== undefined) updateData.coverImage = coverImage;
+    if (location !== undefined) updateData.location = location;
+    if (website !== undefined) updateData.website = website;
+    if (dob !== undefined) updateData.dob = dob;
+    // Accept base64 avatar (data:image/... URI)
+    if (avatar !== undefined) updateData.avatar = avatar;
 
-  if (req.file) {
-    updateData.avatar = `/uploads/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(req.user._id, updateData, { new: true }).select('-password');
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
+});
 
-  if (location !== undefined) updateData.location = location;
-  if (website !== undefined) updateData.website = website;
-  if (dob !== undefined) updateData.dob = dob;
-
-  const user = await User.findByIdAndUpdate(req.user._id, updateData, { new: true }).select('-password');
-  res.json(user);
+// PUT /api/users/notification-prefs
+router.put('/notification-prefs', authMiddleware, async (req, res) => {
+  try {
+    const { securityAlerts, newFollowers, blockchainVerification, marketing } = req.body;
+    const prefs = { securityAlerts, newFollowers, blockchainVerification, marketing };
+    const user = await User.findByIdAndUpdate(req.user._id, { notificationPrefs: prefs }, { new: true }).select('-password');
+    res.json({ success: true, notificationPrefs: user.notificationPrefs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/users/:id/analyze
