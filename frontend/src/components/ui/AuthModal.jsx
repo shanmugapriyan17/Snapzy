@@ -150,21 +150,8 @@ export default function AuthModal({ open, onClose, defaultIsLogin = true }) {
 
           {isLogin && (
             <>
-              {/* Admin Quick Access */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '1.25rem 0 0.5rem', color: 'var(--text-muted)', fontSize: '0.6875rem', fontFamily: "'Space Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                Admin Quick Access
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[['admin1@snapzy.io', 'admin@123', '👤 Admin 1'], ['admin2@snapzy.io', 'admin@456', '👤 Admin 2']].map(([em, pw, label]) => (
-                  <button key={label} type="button" className="btn-ghost" style={{ fontSize: '0.8125rem', padding: '0.5rem', fontFamily: "'Poppins', sans-serif" }}
-                    onClick={() => setForm(f => ({ ...f, email: em, password: pw }))}>{label}</button>
-                ))}
-              </div>
-
-              {/* Badge for Login to mimic stitch details */}
-              <div style={{ marginTop: '1rem', background: 'var(--bg-4)', borderRadius: 8, padding: '0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Blockchain auth badge */}
+              <div style={{ marginTop: '0.75rem', background: 'var(--bg-4)', borderRadius: 8, padding: '0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.6875rem', fontFamily: "'Space Mono', monospace" }}>
                   <FiLock size={12} color="#f59e0b" /> SHA-256: 8F7E...A29C_AUTH_PENDING
                 </div>
